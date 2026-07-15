@@ -1,0 +1,21 @@
+-------------------------------------------------------------------------------
+Test set: com.company.alloca.EmployeeServiceTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.305 s <<< FAILURE! -- in com.company.alloca.EmployeeServiceTest
+com.company.alloca.EmployeeServiceTest.deleteEmployee_exists_success -- Time elapsed: 0.101 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected exception thrown: java.lang.NullPointerException: Cannot invoke "com.company.alloca.repository.ResourceAllocationRepository.findByEmployeeEmployeeId(java.lang.Long)" because "this.allocationRepository" is null
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at org.junit.jupiter.api.AssertDoesNotThrow.createAssertionFailedError(AssertDoesNotThrow.java:84)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:53)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:36)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3168)
+	at com.company.alloca.EmployeeServiceTest.deleteEmployee_exists_success(EmployeeServiceTest.java:109)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: java.lang.NullPointerException: Cannot invoke "com.company.alloca.repository.ResourceAllocationRepository.findByEmployeeEmployeeId(java.lang.Long)" because "this.allocationRepository" is null
+	at com.company.alloca.service.EmployeeService.deleteEmployee(EmployeeService.java:94)
+	at com.company.alloca.EmployeeServiceTest.lambda$deleteEmployee_exists_success$2(EmployeeServiceTest.java:109)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:49)
+	... 6 more
+
