@@ -1,0 +1,272 @@
+{
+  "info": {
+    "name": "ALLOCA API Collection",
+    "description": "Postman collection for the ALLOCA Project Resource Allocation Management System.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "Get All Employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/employees"
+          }
+        },
+        {
+          "name": "Get Employee By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/employees/1"
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john.doe@company.com\",\n  \"role\": \"Backend Developer\",\n  \"department\": \"Engineering\"\n}"
+            },
+            "url": "{{baseUrl}}/employees"
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe Updated\",\n  \"email\": \"john.updated@company.com\",\n  \"role\": \"Senior Backend Developer\",\n  \"department\": \"Engineering\"\n}"
+            },
+            "url": "{{baseUrl}}/employees/1"
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/employees/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/projects"
+          }
+        },
+        {
+          "name": "Get Project By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/projects/1"
+          }
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectCode\": \"ALC001\",\n  \"projectName\": \"Allocation Portal\",\n  \"customer\": \"Internal\",\n  \"status\": \"ACTIVE\",\n  \"startDate\": \"2026-07-01\",\n  \"endDate\": \"2026-12-31\"\n}"
+            },
+            "url": "{{baseUrl}}/projects"
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectCode\": \"ALC001\",\n  \"projectName\": \"Allocation Portal Updated\",\n  \"customer\": \"Internal\",\n  \"status\": \"ACTIVE\",\n  \"startDate\": \"2026-07-01\",\n  \"endDate\": \"2027-01-31\"\n}"
+            },
+            "url": "{{baseUrl}}/projects/1"
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/projects/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Allocations",
+      "item": [
+        {
+          "name": "Get All Allocations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/allocations"
+          }
+        },
+        {
+          "name": "Create Allocation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": 1,\n  \"projectId\": 1,\n  \"allocationPercent\": 50,\n  \"roleInProject\": \"Backend Developer\",\n  \"startDate\": \"2026-07-01\",\n  \"endDate\": \"2026-12-31\"\n}"
+            },
+            "url": "{{baseUrl}}/allocations"
+          }
+        },
+        {
+          "name": "Update Allocation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": 1,\n  \"projectId\": 1,\n  \"allocationPercent\": 60,\n  \"roleInProject\": \"Lead Backend Developer\",\n  \"startDate\": \"2026-07-01\",\n  \"endDate\": \"2026-12-31\"\n}"
+            },
+            "url": "{{baseUrl}}/allocations/1"
+          }
+        },
+        {
+          "name": "Delete Allocation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/allocations/1"
+          }
+        },
+        {
+          "name": "Get Employee Workload",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/employees/1/workload"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Utilization Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/utilization"
+          }
+        },
+        {
+          "name": "Available Resources Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/available"
+          }
+        },
+        {
+          "name": "Overloaded Employees Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/overloaded"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Recommend Resources",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Developer\",\n  \"minAvailable\": 50,\n  \"count\": 3\n}"
+            },
+            "url": "{{baseUrl}}/ai/recommend"
+          }
+        },
+        {
+          "name": "Risk Detection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"neededResources\": 2,\n  \"role\": \"Developer\"\n}"
+            },
+            "url": "{{baseUrl}}/ai/risk-detection"
+          }
+        }
+      ]
+    }
+  ]
+}
