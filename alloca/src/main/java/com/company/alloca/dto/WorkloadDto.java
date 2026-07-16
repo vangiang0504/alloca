@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class WorkloadDto {
     private Long employeeId;
     private String employeeName;
-    private Integer totalAllocation;
+    private Integer allocated;
     private Integer available;
 }

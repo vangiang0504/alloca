@@ -38,6 +38,11 @@ public class ResourceAllocation {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private AllocationStatus status = AllocationStatus.PENDING;
+
     public Long getAllocationId() { return allocationId; }
     public void setAllocationId(Long allocationId) { this.allocationId = allocationId; }
     public Employee getEmployee() { return employee; }
@@ -52,6 +57,8 @@ public class ResourceAllocation {
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public AllocationStatus getStatus() { return status; }
+    public void setStatus(AllocationStatus status) { this.status = status; }
 
     @Override
     public String toString() {

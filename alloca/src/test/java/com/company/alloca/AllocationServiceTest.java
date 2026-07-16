@@ -6,6 +6,7 @@ import com.company.alloca.dto.WorkloadDto;
 import com.company.alloca.entity.*;
 import com.company.alloca.exception.AllocationExceededException;
 import com.company.alloca.exception.ProjectStatusException;
+import com.company.alloca.exception.InvalidAllocationStatusException;
 import com.company.alloca.repository.EmployeeRepository;
 import com.company.alloca.repository.ProjectRepository;
 import com.company.alloca.repository.ResourceAllocationRepository;
@@ -91,12 +92,12 @@ class AllocationServiceTest {
                 .projectId(1L)
                 .allocationPercent(30)
                 .roleInProject("Developer")
-                .startDate("2026-07-01")
-                .endDate("2026-07-31")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 7, 31))
                 .build();
 
-        when(allocationRepository.sumAllocationByEmployeeId(1L)).thenReturn(50);
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(testEmployee));
+        when(employeeRepository.findWithLockByEmployeeId(1L)).thenReturn(Optional.of(testEmployee));
+        when(allocationRepository.findOverlappingAllocations(1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31))).thenReturn(java.util.Collections.emptyList());
         when(projectRepository.findById(1L)).thenReturn(Optional.of(activeProject));
         when(allocationRepository.save(any(ResourceAllocation.class))).thenAnswer(invocation -> {
             ResourceAllocation saved = invocation.getArgument(0);
@@ -108,6 +109,7 @@ class AllocationServiceTest {
 
         assertNotNull(response);
         assertEquals(30, response.getAllocationPercent());
+        assertEquals("PENDING", response.getStatus());
         verify(allocationRepository).save(any(ResourceAllocation.class));
     }
 
@@ -118,17 +120,23 @@ class AllocationServiceTest {
                 .projectId(1L)
                 .allocationPercent(60)
                 .roleInProject("Developer")
-                .startDate("2026-07-01")
-                .endDate("2026-07-31")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 7, 31))
                 .build();
 
-        when(allocationRepository.sumAllocationByEmployeeId(1L)).thenReturn(50);
+        when(employeeRepository.findWithLockByEmployeeId(1L)).thenReturn(Optional.of(testEmployee));
+        
+        ResourceAllocation existing = new ResourceAllocation();
+        existing.setAllocationPercent(50);
+        existing.setStartDate(LocalDate.of(2026, 7, 10));
+        existing.setEndDate(LocalDate.of(2026, 7, 20));
+        when(allocationRepository.findOverlappingAllocations(1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31))).thenReturn(List.of(existing));
 
         AllocationExceededException ex = assertThrows(
                 AllocationExceededException.class,
                 () -> allocationService.createAllocation(request)
         );
-        assertEquals("Employee allocation exceeds 100%", ex.getMessage());
+        assertEquals("Employee allocation exceeds 100% on some dates in the requested range", ex.getMessage());
         verify(allocationRepository, never()).save(any());
     }
 
@@ -139,12 +147,17 @@ class AllocationServiceTest {
                 .projectId(1L)
                 .allocationPercent(40)
                 .roleInProject("Developer")
-                .startDate("2026-07-01")
-                .endDate("2026-07-31")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 7, 31))
                 .build();
 
-        when(allocationRepository.sumAllocationByEmployeeId(1L)).thenReturn(60);
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(testEmployee));
+        when(employeeRepository.findWithLockByEmployeeId(1L)).thenReturn(Optional.of(testEmployee));
+        
+        ResourceAllocation existing = new ResourceAllocation();
+        existing.setAllocationPercent(60);
+        existing.setStartDate(LocalDate.of(2026, 7, 10));
+        existing.setEndDate(LocalDate.of(2026, 7, 20));
+        when(allocationRepository.findOverlappingAllocations(1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31))).thenReturn(List.of(existing));
         when(projectRepository.findById(1L)).thenReturn(Optional.of(activeProject));
         when(allocationRepository.save(any(ResourceAllocation.class))).thenReturn(testAllocation);
 
@@ -163,12 +176,12 @@ class AllocationServiceTest {
                 .projectId(2L)
                 .allocationPercent(30)
                 .roleInProject("Developer")
-                .startDate("2026-07-01")
-                .endDate("2026-07-31")
+                .startDate(LocalDate.of(2026, 7, 1))
+                .endDate(LocalDate.of(2026, 7, 31))
                 .build();
 
-        when(allocationRepository.sumAllocationByEmployeeId(1L)).thenReturn(0);
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(testEmployee));
+        when(employeeRepository.findWithLockByEmployeeId(1L)).thenReturn(Optional.of(testEmployee));
+        when(allocationRepository.findOverlappingAllocations(1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31))).thenReturn(java.util.Collections.emptyList());
         when(projectRepository.findById(2L)).thenReturn(Optional.of(completedProject));
 
         ProjectStatusException ex = assertThrows(
@@ -184,25 +197,25 @@ class AllocationServiceTest {
     @Test
     void getEmployeeWorkload_returnsCorrectCalculation() {
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(testEmployee));
-        when(allocationRepository.sumAllocationByEmployeeId(1L)).thenReturn(60);
+        when(allocationRepository.sumAllocationByEmployeeIdAndDate(eq(1L), any(LocalDate.class))).thenReturn(60);
 
         WorkloadDto workload = allocationService.getEmployeeWorkload(1L);
 
         assertNotNull(workload);
         assertEquals(1L, workload.getEmployeeId());
         assertEquals("Tuan Ho Anh", workload.getEmployeeName());
-        assertEquals(60, workload.getTotalAllocation());
+        assertEquals(60, workload.getAllocated());
         assertEquals(40, workload.getAvailable());
     }
 
     @Test
     void getEmployeeWorkload_noAllocations_fullAvailable() {
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(testEmployee));
-        when(allocationRepository.sumAllocationByEmployeeId(1L)).thenReturn(0);
+        when(allocationRepository.sumAllocationByEmployeeIdAndDate(eq(1L), any(LocalDate.class))).thenReturn(0);
 
         WorkloadDto workload = allocationService.getEmployeeWorkload(1L);
 
-        assertEquals(0, workload.getTotalAllocation());
+        assertEquals(0, workload.getAllocated());
         assertEquals(100, workload.getAvailable());
     }
 
@@ -222,7 +235,83 @@ class AllocationServiceTest {
 
     @Test
     void deleteAllocation_callsRepository() {
+        testAllocation.setStatus(AllocationStatus.PENDING);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+        
         allocationService.deleteAllocation(1L);
+        
         verify(allocationRepository).deleteById(1L);
+    }
+
+    // ===== Allocation Status Workflow Tests =====
+
+    @Test
+    void activateAllocation_pendingStatus_success() {
+        testAllocation.setStatus(AllocationStatus.PENDING);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+        when(allocationRepository.save(any(ResourceAllocation.class))).thenReturn(testAllocation);
+
+        AllocationResponse response = allocationService.activateAllocation(1L);
+
+        assertNotNull(response);
+        assertEquals("ACTIVE", response.getStatus());
+        verify(allocationRepository).save(any(ResourceAllocation.class));
+    }
+
+    @Test
+    void activateAllocation_endedStatus_throwsException() {
+        testAllocation.setStatus(AllocationStatus.ENDED);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+
+        InvalidAllocationStatusException ex = assertThrows(
+                InvalidAllocationStatusException.class,
+                () -> allocationService.activateAllocation(1L)
+        );
+        assertTrue(ex.getMessage().contains("Only PENDING"));
+        verify(allocationRepository, never()).save(any());
+    }
+
+    @Test
+    void activateAllocation_activeStatus_throwsException() {
+        testAllocation.setStatus(AllocationStatus.ACTIVE);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+
+        assertThrows(InvalidAllocationStatusException.class,
+                () -> allocationService.activateAllocation(1L));
+    }
+
+    @Test
+    void endAllocation_activeStatus_success() {
+        testAllocation.setStatus(AllocationStatus.ACTIVE);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+        when(allocationRepository.save(any(ResourceAllocation.class))).thenReturn(testAllocation);
+
+        AllocationResponse response = allocationService.endAllocation(1L);
+
+        assertNotNull(response);
+        assertEquals("ENDED", response.getStatus());
+        verify(allocationRepository).save(any(ResourceAllocation.class));
+    }
+
+    @Test
+    void endAllocation_pendingStatus_throwsException() {
+        testAllocation.setStatus(AllocationStatus.PENDING);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+
+        InvalidAllocationStatusException ex = assertThrows(
+                InvalidAllocationStatusException.class,
+                () -> allocationService.endAllocation(1L)
+        );
+        assertTrue(ex.getMessage().contains("Only ACTIVE"));
+        verify(allocationRepository, never()).save(any());
+    }
+
+    @Test
+    void endAllocation_endedStatus_throwsException() {
+        testAllocation.setStatus(AllocationStatus.ENDED);
+        when(allocationRepository.findById(1L)).thenReturn(Optional.of(testAllocation));
+
+        assertThrows(InvalidAllocationStatusException.class,
+                () -> allocationService.endAllocation(1L));
     }
 }

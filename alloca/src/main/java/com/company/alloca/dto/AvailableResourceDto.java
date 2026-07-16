@@ -15,4 +15,12 @@ public class AvailableResourceDto {
     private Integer available;
     private String role;
     private String department;
+
+    public AvailableResourceDto(Long employeeId, String employeeName, String role, String department, Long available) {
+        this.employeeId = employeeId;
+        this.employeeName = employeeName;
+        this.role = role;
+        this.department = department;
+        this.available = available != null ? available.intValue() : 0;
+    }
 }

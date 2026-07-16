@@ -1,6 +1,8 @@
 package com.company.alloca.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,8 +29,10 @@ public class AllocationRequest {
     private String roleInProject;
 
     @NotNull(message = "Start date is required")
-    private String startDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startDate;
 
     @NotNull(message = "End date is required")
-    private String endDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 }

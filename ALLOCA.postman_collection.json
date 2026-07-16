@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "ALLOCA API Collection",
-    "description": "Postman collection for the ALLOCA Project Resource Allocation Management System.",
+    "name": "ALLOCA API Collection v1.5",
+    "description": "Postman collection for the ALLOCA Project Resource Allocation Management System v1.5.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -70,6 +70,54 @@
             "method": "DELETE",
             "header": [],
             "url": "{{baseUrl}}/employees/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Skills",
+      "item": [
+        {
+          "name": "Add Skills to Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"Java\", \"Spring Boot\", \"PostgreSQL\"]"
+            },
+            "url": "{{baseUrl}}/employees/1/skills"
+          }
+        },
+        {
+          "name": "Get Employee Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/employees/1/skills"
+          }
+        },
+        {
+          "name": "Search Employees by Skill",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/search?skill=Java",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "search"],
+              "query": [
+                {
+                  "key": "skill",
+                  "value": "Java"
+                }
+              ]
+            }
           }
         }
       ]
@@ -188,6 +236,22 @@
             "method": "DELETE",
             "header": [],
             "url": "{{baseUrl}}/allocations/1"
+          }
+        },
+        {
+          "name": "Activate Allocation",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/allocations/1/activate"
+          }
+        },
+        {
+          "name": "End Allocation",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/allocations/1/end"
           }
         },
         {

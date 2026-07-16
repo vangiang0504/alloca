@@ -2,7 +2,9 @@ package com.company.alloca.entity;
 
 import jakarta.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -38,6 +40,15 @@ public class Employee {
     @Builder.Default
     private List<ResourceAllocation> allocations = new ArrayList<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "employee_skill",
+            joinColumns = @JoinColumn(name = "employee_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    @Builder.Default
+    private Set<Skill> skills = new HashSet<>();
+
     public Long getEmployeeId() { return employeeId; }
     public void setEmployeeId(Long employeeId) { this.employeeId = employeeId; }
     public String getEmployeeCode() { return employeeCode; }
@@ -52,6 +63,8 @@ public class Employee {
     public void setDepartment(String department) { this.department = department; }
     public List<ResourceAllocation> getAllocations() { return allocations; }
     public void setAllocations(List<ResourceAllocation> allocations) { this.allocations = allocations; }
+    public Set<Skill> getSkills() { return skills; }
+    public void setSkills(Set<Skill> skills) { this.skills = skills; }
 
     @Override
     public String toString() {

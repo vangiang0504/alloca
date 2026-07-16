@@ -19,4 +19,5 @@ public class AllocationResponse {
     private String roleInProject;
     private String startDate;
     private String endDate;
+    private String status;
 }
