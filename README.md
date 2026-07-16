@@ -1,4 +1,4 @@
-# ALLOCA - Project Resource Allocation Management System
+# ALLOCA - Project Resource Allocation Management System v1.5
 
 ## Overview
 ALLOCA is a full-stack project resource allocation management system designed for outsourcing or multi-project organizations. It helps teams manage employees, projects, allocations, workload visibility, reporting, and AI-assisted planning.
@@ -30,8 +30,10 @@ The project includes:
 ## Main Features
 - Employee management (CRUD)
 - Project management (CRUD)
+- Skill management and resource search by skill (v1.5)
 - Resource allocation across multiple projects
-- Employee workload tracking
+- Allocation status workflow (PENDING, ACTIVE, ENDED) (v1.5)
+- Employee workload and available capacity tracking (v1.5)
 - Reports for utilization, availability, and overloaded employees
 - AI-assisted recommendations and risk detection
 - Swagger API documentation
@@ -143,6 +145,11 @@ baseURL: 'http://localhost:8080'
 - `PUT /employees/{id}`
 - `DELETE /employees/{id}`
 
+### Skills (v1.5)
+- `POST /employees/{id}/skills`
+- `GET /employees/{id}/skills`
+- `GET /employees/search?skill={name}`
+
 ### Projects
 - `GET /projects`
 - `GET /projects/{id}`
@@ -152,10 +159,12 @@ baseURL: 'http://localhost:8080'
 
 ### Allocations
 - `GET /allocations`
-- `POST /allocations`
+- `POST /allocations` (Creates with status PENDING)
 - `PUT /allocations/{id}`
 - `DELETE /allocations/{id}`
-- `GET /employees/{id}/workload`
+- `PUT /allocations/{id}/activate` (v1.5: PENDING → ACTIVE)
+- `PUT /allocations/{id}/end` (v1.5: ACTIVE → ENDED)
+- `GET /employees/{id}/workload` (Includes available capacity calculation)
 
 ### Reports
 - `GET /reports/utilization`
@@ -241,8 +250,10 @@ npm run build
 ## Deliverables
 - Full backend source code in `alloca/`
 - Full frontend source code in `alloca-frontend/`
+- SQL Script
 - English project documentation in `README.md`
 - Postman collection for API testing
+- AI Review Report in `AI_Review_Report.md` (v1.5)
 
 ---
 ALLOCA is intended as a practical sample full-stack project for resource planning, allocation visibility, and reporting in a multi-project environment.

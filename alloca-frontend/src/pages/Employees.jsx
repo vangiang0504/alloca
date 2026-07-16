@@ -6,11 +6,11 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon,
-  Person as PersonIcon,
+  Person as PersonIcon, Build as BuildIcon, FindInPage as FindInPageIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '../api/api';
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee, getEmployeeSkills, addEmployeeSkills, searchEmployeesBySkill } from '../api/api';
 
 const initialForm = { employeeCode: '', fullName: '', email: '', role: '', department: '' };
 
@@ -27,6 +27,19 @@ export default function Employees() {
   const [errors, setErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Skill Management State
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const [skillsTarget, setSkillsTarget] = useState(null);
+  const [skillsList, setSkillsList] = useState([]);
+  const [newSkill, setNewSkill] = useState('');
+  const [skillsLoading, setSkillsLoading] = useState(false);
+
+  // Resource Search State
+  const [searchSkillOpen, setSearchSkillOpen] = useState(false);
+  const [searchSkillInput, setSearchSkillInput] = useState('');
+  const [searchSkillResults, setSearchSkillResults] = useState([]);
+  const [searchSkillLoading, setSearchSkillLoading] = useState(false);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -129,6 +142,50 @@ export default function Employees() {
       e.department.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleOpenSkills = async (emp) => {
+    setSkillsTarget(emp);
+    setSkillsList([]);
+    setSkillsOpen(true);
+    setSkillsLoading(true);
+    try {
+      const skills = await getEmployeeSkills(emp.employeeId || emp.id);
+      setSkillsList(skills || []);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to load skills', severity: 'error' });
+    } finally {
+      setSkillsLoading(false);
+    }
+  };
+
+  const handleAddSkill = async () => {
+    if (!newSkill.trim()) return;
+    const addedSkills = [...new Set([...skillsList, newSkill.trim()])];
+    setSkillsLoading(true);
+    try {
+      const updated = await addEmployeeSkills(skillsTarget.employeeId || skillsTarget.id, [newSkill.trim()]);
+      setSkillsList(updated);
+      setNewSkill('');
+      setSnackbar({ open: true, message: 'Skill added successfully', severity: 'success' });
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to add skill', severity: 'error' });
+    } finally {
+      setSkillsLoading(false);
+    }
+  };
+
+  const handleSearchBySkill = async () => {
+    if (!searchSkillInput.trim()) return;
+    setSearchSkillLoading(true);
+    try {
+      const results = await searchEmployeesBySkill(searchSkillInput.trim());
+      setSearchSkillResults(results || []);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Search failed', severity: 'error' });
+    } finally {
+      setSearchSkillLoading(false);
+    }
+  };
+
   const columns = [
     { field: 'employeeCode', headerName: 'Code', width: 110, renderCell: (params) => (
       <Chip label={params.value} size="small" variant="outlined" color="primary" />
@@ -142,10 +199,15 @@ export default function Employees() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 110,
+      width: 140,
       sortable: false,
       renderCell: (params) => (
         <Box>
+          <Tooltip title="Manage Skills">
+            <IconButton size="small" onClick={() => handleOpenSkills(params.row)} sx={{ color: theme.palette.info.main }}>
+              <BuildIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Edit">
             <IconButton size="small" onClick={() => handleOpenEdit(params.row)} sx={{ color: theme.palette.primary.main }}>
               <EditIcon fontSize="small" />
@@ -178,7 +240,7 @@ export default function Employees() {
 
       <Card>
         <CardContent>
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
             <TextField
               size="small"
               placeholder="Search employees..."
@@ -189,8 +251,15 @@ export default function Employees() {
                   <InputAdornment position="start"><SearchIcon /></InputAdornment>
                 ),
               }}
-              sx={{ maxWidth: 400 }}
+              sx={{ maxWidth: 400, flex: 1 }}
             />
+            <Button
+              variant="outlined"
+              startIcon={<FindInPageIcon />}
+              onClick={() => { setSearchSkillResults([]); setSearchSkillInput(''); setSearchSkillOpen(true); }}
+            >
+              Find by Skill
+            </Button>
           </Box>
           <DataGrid
             rows={filtered}
@@ -330,6 +399,98 @@ export default function Employees() {
           <Button onClick={handleDeleteConfirm} variant="contained" color="error">
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Skill Management Dialog */}
+      <Dialog open={skillsOpen} onClose={() => setSkillsOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Manage Skills - {skillsTarget?.fullName}
+        </DialogTitle>
+        <DialogContent sx={{ minHeight: 150 }}>
+          {skillsLoading && skillsList.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {skillsList.length > 0 ? (
+                  skillsList.map((skill, index) => (
+                    <Chip key={index} label={skill} color="primary" variant="outlined" />
+                  ))
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No skills found.</Typography>
+                )}
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  size="small"
+                  label="New Skill"
+                  fullWidth
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddSkill(); }}
+                />
+                <Button variant="contained" onClick={handleAddSkill} disabled={skillsLoading || !newSkill.trim()}>
+                  Add
+                </Button>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setSkillsOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Resource Search Dialog */}
+      <Dialog open={searchSkillOpen} onClose={() => setSearchSkillOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Find Resource by Skill</DialogTitle>
+        <DialogContent sx={{ minHeight: 250 }}>
+          <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                label="Skill (e.g. Java)"
+                fullWidth
+                value={searchSkillInput}
+                onChange={(e) => setSearchSkillInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSearchBySkill(); }}
+              />
+              <Button variant="contained" onClick={handleSearchBySkill} disabled={searchSkillLoading || !searchSkillInput.trim()}>
+                Search
+              </Button>
+            </Box>
+            <Box>
+              {searchSkillLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+              ) : (
+                <Box>
+                  {searchSkillResults.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Search Results:</Typography>
+                      {searchSkillResults.map((res, index) => (
+                        <Card key={index} variant="outlined" sx={{ display: 'flex', justifyContent: 'space-between', p: 1.5, alignItems: 'center' }}>
+                          <Typography fontWeight={600}>{res.employeeName}</Typography>
+                          <Typography variant="body2" color={res.available > 0 ? 'success.main' : 'error.main'} fontWeight={600}>
+                            Available: {res.available}%
+                          </Typography>
+                        </Card>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                      {searchSkillInput ? 'No resources found with this skill.' : 'Enter a skill to search.'}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setSearchSkillOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

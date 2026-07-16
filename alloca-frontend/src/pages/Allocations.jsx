@@ -3,16 +3,17 @@ import {
   Box, Typography, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Button, IconButton, Tooltip, Autocomplete,
   Slider, CircularProgress, Alert, Snackbar, Grid, useTheme,
-  LinearProgress,
+  LinearProgress, Chip
 } from '@mui/material';
 import {
   Delete as DeleteIcon, Edit as EditIcon, WorkHistory as WorkHistoryIcon,
   Person as PersonIcon, CalendarMonth as CalendarMonthIcon,
+  PlayArrow as PlayArrowIcon, Stop as StopIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllocations, createAllocation, updateAllocation, deleteAllocation,
-  getEmployees, getProjects, getWorkload } from '../api/api';
+  getEmployees, getProjects, getWorkload, activateAllocation, endAllocation } from '../api/api';
 
 const initialForm = {
   employeeId: null, projectId: null, allocationPercent: 50,
@@ -159,6 +160,26 @@ export default function Allocations() {
     }
   };
 
+  const handleActivate = async (alloc) => {
+    try {
+      await activateAllocation(alloc.allocationId || alloc.id);
+      setSnackbar({ open: true, message: 'Allocation activated successfully', severity: 'success' });
+      await fetchAllData();
+    } catch (err) {
+      setSnackbar({ open: true, message: err?.response?.data?.message || 'Failed to activate', severity: 'error' });
+    }
+  };
+
+  const handleEnd = async (alloc) => {
+    try {
+      await endAllocation(alloc.allocationId || alloc.id);
+      setSnackbar({ open: true, message: 'Allocation ended successfully', severity: 'success' });
+      await fetchAllData();
+    } catch (err) {
+      setSnackbar({ open: true, message: err?.response?.data?.message || 'Failed to end', severity: 'error' });
+    }
+  };
+
   const getEmpName = (id) => employees.find((e) => e.employeeId === id)?.fullName || 'Unknown';
   const getProjName = (id) => projects.find((p) => p.projectId === id)?.projectName || 'Unknown';
 
@@ -210,10 +231,55 @@ export default function Allocations() {
     { field: 'roleInProject', headerName: 'Role', width: 140 },
     { field: 'startDate', headerName: 'Start', width: 110 },
     { field: 'endDate', headerName: 'End', width: 110 },
+    { field: 'status', headerName: 'Status', width: 110,
+      renderCell: (params) => {
+        const s = params.value || 'PENDING';
+        let color = 'default';
+        if (s === 'ACTIVE') color = 'success';
+        else if (s === 'ENDED') color = 'error';
+        else color = 'warning';
+        return <Chip label={s} size="small" color={color} variant="outlined" sx={{ fontWeight: 700, fontSize: '0.7rem' }} />;
+      }
+    },
     {
-      field: 'actions', headerName: 'Actions', width: 120, sortable: false,
-      renderCell: (params) => (
+      field: 'actions', headerName: 'Actions', width: 160, sortable: false,
+      renderCell: (params) => {
+        const s = params.row.status || 'PENDING';
+        return (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {s === 'PENDING' && (
+            <Tooltip title="Activate" arrow>
+              <IconButton
+                size="small"
+                onClick={() => handleActivate(params.row)}
+                sx={{
+                  color: theme.palette.success.main,
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76,175,80,0.12)' : 'rgba(76,175,80,0.08)',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': { backgroundColor: theme.palette.success.main, color: '#fff', transform: 'scale(1.1)' },
+                }}
+              >
+                <PlayArrowIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {s === 'ACTIVE' && (
+            <Tooltip title="End Allocation" arrow>
+              <IconButton
+                size="small"
+                onClick={() => handleEnd(params.row)}
+                sx={{
+                  color: theme.palette.warning.main,
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,152,0,0.12)' : 'rgba(255,152,0,0.08)',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': { backgroundColor: theme.palette.warning.main, color: '#fff', transform: 'scale(1.1)' },
+                }}
+              >
+                <StopIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {s !== 'ENDED' && (
           <Tooltip title="Edit allocation" arrow>
             <IconButton
               size="small"
@@ -232,6 +298,7 @@ export default function Allocations() {
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          )}
           <Tooltip title="Delete allocation" arrow>
             <IconButton
               size="small"
@@ -251,7 +318,7 @@ export default function Allocations() {
             </IconButton>
           </Tooltip>
         </Box>
-      ),
+      )}
     },
   ];
 
@@ -332,6 +399,17 @@ export default function Allocations() {
             }}>
               <WorkHistoryIcon sx={{ fontSize: 28, opacity: 0.9 }} />
               {editing ? 'Edit Allocation' : 'New Allocation'}
+              <Box sx={{ flex: 1 }} />
+              <Chip
+                label={editing ? editing.status || 'PENDING' : 'PENDING'}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.7rem'
+                }}
+              />
             </DialogTitle>
             <DialogContent sx={{
               px: 3,

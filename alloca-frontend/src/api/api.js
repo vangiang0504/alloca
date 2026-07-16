@@ -27,17 +27,24 @@ const mockProjects = [
 ];
 
 const mockAllocations = [
-  { id: 1, employeeId: 1, projectId: 1, allocationPercent: 50, roleInProject: 'Backend Lead', startDate: '2024-01-15', endDate: '2024-08-30' },
-  { id: 2, employeeId: 1, projectId: 3, allocationPercent: 30, roleInProject: 'Data Engineer', startDate: '2024-03-01', endDate: '2024-09-15' },
-  { id: 3, employeeId: 2, projectId: 2, allocationPercent: 75, roleInProject: 'UI Designer', startDate: '2024-06-01', endDate: '2024-12-31' },
-  { id: 4, employeeId: 3, projectId: 1, allocationPercent: 40, roleInProject: 'Project Manager', startDate: '2024-01-15', endDate: '2024-08-30' },
-  { id: 5, employeeId: 4, projectId: 3, allocationPercent: 60, roleInProject: 'Backend Developer', startDate: '2024-03-01', endDate: '2024-09-15' },
-  { id: 6, employeeId: 5, projectId: 4, allocationPercent: 100, roleInProject: 'Data Analyst', startDate: '2023-06-01', endDate: '2024-02-28' },
-  { id: 7, employeeId: 6, projectId: 1, allocationPercent: 35, roleInProject: 'Frontend Developer', startDate: '2024-01-15', endDate: '2024-08-30' },
-  { id: 8, employeeId: 6, projectId: 6, allocationPercent: 50, roleInProject: 'Full Stack Dev', startDate: '2024-04-01', endDate: '2024-10-31' },
-  { id: 9, employeeId: 7, projectId: 5, allocationPercent: 80, roleInProject: 'Lead Designer', startDate: '2024-07-01', endDate: '2025-03-31' },
-  { id: 10, employeeId: 8, projectId: 2, allocationPercent: 60, roleInProject: 'Product Manager', startDate: '2024-06-01', endDate: '2024-12-31' },
+  { id: 1, employeeId: 1, projectId: 1, allocationPercent: 50, roleInProject: 'Backend Lead', startDate: '2024-01-15', endDate: '2024-08-30', status: 'ACTIVE' },
+  { id: 2, employeeId: 1, projectId: 3, allocationPercent: 30, roleInProject: 'Data Engineer', startDate: '2024-03-01', endDate: '2024-09-15', status: 'ACTIVE' },
+  { id: 3, employeeId: 2, projectId: 2, allocationPercent: 75, roleInProject: 'UI Designer', startDate: '2024-06-01', endDate: '2024-12-31', status: 'ACTIVE' },
+  { id: 4, employeeId: 3, projectId: 1, allocationPercent: 40, roleInProject: 'Project Manager', startDate: '2024-01-15', endDate: '2024-08-30', status: 'ACTIVE' },
+  { id: 5, employeeId: 4, projectId: 3, allocationPercent: 60, roleInProject: 'Backend Developer', startDate: '2024-03-01', endDate: '2024-09-15', status: 'ACTIVE' },
+  { id: 6, employeeId: 5, projectId: 4, allocationPercent: 100, roleInProject: 'Data Analyst', startDate: '2023-06-01', endDate: '2024-02-28', status: 'ENDED' },
+  { id: 7, employeeId: 6, projectId: 1, allocationPercent: 35, roleInProject: 'Frontend Developer', startDate: '2024-01-15', endDate: '2024-08-30', status: 'ACTIVE' },
+  { id: 8, employeeId: 6, projectId: 6, allocationPercent: 50, roleInProject: 'Full Stack Dev', startDate: '2024-04-01', endDate: '2024-10-31', status: 'PENDING' },
+  { id: 9, employeeId: 7, projectId: 5, allocationPercent: 80, roleInProject: 'Lead Designer', startDate: '2024-07-01', endDate: '2025-03-31', status: 'ACTIVE' },
+  { id: 10, employeeId: 8, projectId: 2, allocationPercent: 60, roleInProject: 'Product Manager', startDate: '2024-06-01', endDate: '2024-12-31', status: 'ACTIVE' },
 ];
+
+const mockSkills = {
+  1: ['Java', 'Spring Boot', 'PostgreSQL'],
+  2: ['React', 'JavaScript', 'TypeScript'],
+  3: ['Testing', 'QA'],
+  6: ['React', 'Node.js', 'Java']
+};
 
 // Simulated delay
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
@@ -119,7 +126,7 @@ function mockHandler(method, url, data) {
       case 'get':
         return id ? mockAllocations.find(a => a.id === id) : [...mockAllocations];
       case 'post': {
-        const newAlloc = { ...data, id: Math.max(...mockAllocations.map(a => a.id)) + 1 };
+        const newAlloc = { ...data, id: Math.max(...mockAllocations.map(a => a.id)) + 1, status: 'PENDING' };
         mockAllocations.push(newAlloc);
         return newAlloc;
       }
@@ -138,10 +145,55 @@ function mockHandler(method, url, data) {
     }
   }
 
+  // Allocation status
+  if ((match = url.match(/^\/allocations\/(\d+)\/(activate|end)$/))) {
+    const id = Number(match[1]);
+    const action = match[2];
+    const aIdx = mockAllocations.findIndex(a => a.id === id);
+    if (aIdx !== -1) {
+      if (action === 'activate' && mockAllocations[aIdx].status === 'PENDING') {
+        mockAllocations[aIdx].status = 'ACTIVE';
+        return mockAllocations[aIdx];
+      }
+      if (action === 'end' && mockAllocations[aIdx].status === 'ACTIVE') {
+        mockAllocations[aIdx].status = 'ENDED';
+        return mockAllocations[aIdx];
+      }
+      throw { response: { data: { message: 'Invalid status transition' } } };
+    }
+  }
+
+  // Skills and Resource Search
+  if ((match = url.match(/^\/employees\/(\d+)\/skills$/))) {
+    const id = Number(match[1]);
+    if (method.toLowerCase() === 'get') return mockSkills[id] || [];
+    if (method.toLowerCase() === 'post') {
+      mockSkills[id] = [...new Set([...(mockSkills[id] || []), ...data])];
+      return mockSkills[id];
+    }
+  }
+
+  if ((match = url.match(/^\/employees\/search\?skill=(.+)$/))) {
+    const skillParam = decodeURIComponent(match[1]).toLowerCase();
+    const result = [];
+    for (const emp of mockEmployees) {
+      const skills = mockSkills[emp.employeeId] || [];
+      if (skills.some(s => s.toLowerCase().includes(skillParam))) {
+        const empAllocs = mockAllocations.filter(a => a.employeeId === emp.employeeId && a.status !== 'ENDED');
+        const totalAlloc = empAllocs.reduce((sum, a) => sum + a.allocationPercent, 0);
+        result.push({
+          employeeName: emp.fullName,
+          available: Math.max(0, 100 - totalAlloc)
+        });
+      }
+    }
+    return result;
+  }
+
   // Workload
   if ((match = url.match(/^\/employees\/(\d+)\/workload$/))) {
     const empId = Number(match[1]);
-    const empAllocations = mockAllocations.filter(a => a.employeeId === empId);
+    const empAllocations = mockAllocations.filter(a => a.employeeId === empId && a.status !== 'ENDED');
     const totalAllocation = empAllocations.reduce((sum, a) => sum + a.allocationPercent, 0);
     return { employeeId: empId, totalAllocation, availablePercent: Math.max(0, 100 - totalAllocation) };
   }
@@ -149,7 +201,7 @@ function mockHandler(method, url, data) {
   // Utilization report
   if (url === '/reports/utilization') {
     return mockEmployees.map(emp => {
-      const empAllocs = mockAllocations.filter(a => a.employeeId === emp.id);
+      const empAllocs = mockAllocations.filter(a => a.employeeId === emp.id && a.status !== 'ENDED');
       const totalAllocation = empAllocs.reduce((sum, a) => sum + a.allocationPercent, 0);
       return {
         employeeId: emp.id,
@@ -165,7 +217,7 @@ function mockHandler(method, url, data) {
   // Available resources
   if (url === '/reports/available') {
     return mockEmployees.map(emp => {
-      const empAllocs = mockAllocations.filter(a => a.employeeId === emp.id);
+      const empAllocs = mockAllocations.filter(a => a.employeeId === emp.id && a.status !== 'ENDED');
       const totalAllocation = empAllocs.reduce((sum, a) => sum + a.allocationPercent, 0);
       return {
         employeeId: emp.id,
@@ -181,10 +233,10 @@ function mockHandler(method, url, data) {
   if (url === '/reports/overloaded') {
     return mockEmployees
       .map(emp => {
-        const empAllocs = mockAllocations.filter(a => a.employeeId === emp.id);
+        const empAllocs = mockAllocations.filter(a => a.employeeId === emp.employeeId && a.status !== 'ENDED');
         const totalAllocation = empAllocs.reduce((sum, a) => sum + a.allocationPercent, 0);
         return {
-          employeeId: emp.id,
+          employeeId: emp.employeeId,
           employeeName: emp.fullName,
           totalAllocation,
           role: emp.role,
@@ -214,6 +266,12 @@ export const getAllocations = () => request('get', '/allocations');
 export const createAllocation = (data) => request('post', '/allocations', data);
 export const updateAllocation = (id, data) => request('put', `/allocations/${id}`, data);
 export const deleteAllocation = (id) => request('delete', `/allocations/${id}`);
+export const activateAllocation = (id) => request('put', `/allocations/${id}/activate`);
+export const endAllocation = (id) => request('put', `/allocations/${id}/end`);
+
+export const getEmployeeSkills = (id) => request('get', `/employees/${id}/skills`);
+export const addEmployeeSkills = (id, skills) => request('post', `/employees/${id}/skills`, skills);
+export const searchEmployeesBySkill = (skill) => request('get', `/employees/search?skill=${encodeURIComponent(skill)}`);
 
 export const getWorkload = (empId) => request('get', `/employees/${empId}/workload`);
 export const getUtilizationReport = () => request('get', '/reports/utilization');
